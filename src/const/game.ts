@@ -1,4 +1,4 @@
 export const BOARD_SIZE = Object.freeze({
-  w: 16,
-  h: 16,
+  W: 16,
+  H: 16,
 })

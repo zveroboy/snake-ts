@@ -1,36 +1,87 @@
-import React, { useEffect, useMemo, useRef } from 'react'
-import { gameMachine, gameService } from '../../machines/game'
-import Stage from '../Stage'
+import { useMemo, useEffect, FC, HTMLProps } from 'react'
+import { useMachine } from '@xstate/react'
+import StageGrid from '../StageGrid'
+import { createInitialGameContext, gameMachine } from '../../machines/game'
+import { Direction } from '../../const/direction'
+import Snake from '../Snake'
+import { getSize } from '../../utils/matrix'
 
-const useGame = (): React.RefObject<HTMLCanvasElement> => {
-  const canvasRef = useRef<HTMLCanvasElement>(null)
-  // const nextState = gameMachine.transition(gameMachine.initialState, {
-  //   type: 'START',
-  // })
-  // console.log(nextState)
+const Button: FC<HTMLProps<HTMLButtonElement>> = ({
+  children,
+  type,
+  ...props
+}) => (
+  <button
+    className="py-2 px-3 bg-indigo-500 text-white text-sm font-semibold rounded-md shadow-lg shadow-indigo-500/50 focus:outline-none"
+    {...props}
+  >
+    {children}
+  </button>
+)
 
-  // const service = useMemo(
-  //   () => canvasRef.current && new BaseGameService(canvasRef.current),
-  //   [canvasRef.current],
-  // )
+const Game = () => {
+  const dynamicMachine = useMemo(
+    () => gameMachine.withContext(createInitialGameContext()),
+    [],
+  )
+
+  const [state, send] = useMachine(dynamicMachine)
+
+  const matrix = useMemo(() => state.context.stage.outputMatrix(), [state])
 
   useEffect(() => {
-    gameService.start()
+    const keydownHandler = (e: KeyboardEvent) => {
+      switch (e.key) {
+        case 'ArrowLeft':
+          send({ type: 'MOVE', payload: Direction.LEFT })
+          break
+        case 'ArrowRight':
+          send({ type: 'MOVE', payload: Direction.RIGHT })
+          break
+        case 'ArrowUp':
+          send({ type: 'MOVE', payload: Direction.UP })
+          break
+        case 'ArrowDown':
+          send({ type: 'MOVE', payload: Direction.DOWN })
+          break
+      }
+    }
+
+    window.addEventListener('keydown', keydownHandler)
+
     return () => {
-      gameService.stop()
+      window.removeEventListener('keydown', keydownHandler)
     }
   }, [])
 
-  return canvasRef
-}
-
-const Game = () => {
-  const canvasRef = useGame()
+  const [w, h] = getSize(matrix)
 
   return (
-    <div className="h-screen flex place-content-center items-center">
-      <Stage ref={canvasRef} />
-      {/* <div><button onClick={}>Pause</button></div> */}
+    <div className="h-screen flex flex-col place-content-center items-center gap-4">
+      {/* <StageGrid
+        className="shadow-xl"
+      >
+      </StageGrid>
+      */}
+      <StageGrid className="shadow-xl" width={w} height={h}>
+        <Snake matrix={matrix} />
+      </StageGrid>
+      <div>
+        {state.matches('idle') && (
+          <Button onClick={() => send({ type: 'START' })}>Play</Button>
+        )}
+        {state.matches('playing') && (
+          <Button onClick={() => send({ type: 'PAUSE' })}>Pause</Button>
+        )}
+        {state.matches('paused') && (
+          <Button onClick={() => send({ type: 'RESUME' })}>Resume</Button>
+        )}
+        {state.matches('over') && (
+          <Button onClick={() => send({ type: 'PLAY_AGAIN' })}>
+            Play again
+          </Button>
+        )}
+      </div>
     </div>
   )
 }
