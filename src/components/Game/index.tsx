@@ -55,7 +55,7 @@ const Container: FC = ({ children }) => (
   </div>
 )
 
-const Stage: FC<{ isBlurred: boolean }> = ({ children, isBlurred }) => (
+const Stage: FC = ({ children }) => (
   <div
     className={cn(
       'flex',
@@ -63,7 +63,6 @@ const Stage: FC<{ isBlurred: boolean }> = ({ children, isBlurred }) => (
       'justify-center',
       'items-center',
       'gap-4',
-      { 'blur-sm': isBlurred },
     )}
   >
     {children}
@@ -114,7 +113,7 @@ const Game: FC = () => {
   return (
     <>
       <Container>
-        <Stage isBlurred={state.matches('over')}>
+        <Stage>
           <div className={cn(styles.stageWrapper)}>
             <Name>Snake</Name>
             <Score>Score: {state.context.computed.score}</Score>

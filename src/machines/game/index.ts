@@ -12,18 +12,6 @@ import {
 import { Snake } from './Snake'
 import { Stage } from './Stage'
 
-// class ContreteGameContext implements GameContext {
-//   stage!: Stage
-//   direction!: Direction
-//   interval!: number
-//   constructor(context: GameContext) {
-//     Object.assign(this, context)
-//   }
-//   get score(): number {
-//     return this.stage.snake.size
-//   }
-// }
-
 const createContext = (
   baseContext: Omit<GameContext, 'computed'>,
 ): GameContext => {
@@ -170,11 +158,10 @@ export const gameMachine = createMachine<GameContext, GameEvent>({
     guards: {
       isOpposite: ({ direction }, event) => {
         if (!checkIsMoveEvent(event)) return true
-        const res = compare(
+        return compare(
           [0, 0],
           add(DIRECTIONS[direction], DIRECTIONS[event.payload]),
         )
-        return res
       },
       isMoveInvalid: (context, event) => {
         return !validateNewCoords(context, getDireaction(context, event))
