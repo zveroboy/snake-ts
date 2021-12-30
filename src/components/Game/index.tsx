@@ -1,88 +1,152 @@
-import { useMemo, useEffect, FC, HTMLProps } from 'react'
+import { FC, useMemo, useEffect, useCallback } from 'react'
 import { useMachine } from '@xstate/react'
-import StageGrid from '../StageGrid'
-import { createInitialGameContext, gameMachine } from '../../machines/game'
+import cn from 'classnames'
+import BoardGrid from '../BoardGrid'
+import { gameMachine } from '../../machines/game'
 import { Direction } from '../../const/direction'
 import Snake from '../Snake'
 import { getSize } from '../../utils/matrix'
+import styles from './Game.module.css'
+import Button from '../Button'
+import GameOverDialog from '../GameOverDialog'
+import Board from '../Board'
+import { MoveEvent } from '../../machines/game/context'
 
-const Button: FC<HTMLProps<HTMLButtonElement>> = ({
-  children,
-  type,
-  ...props
-}) => (
-  <button
-    className="py-2 px-3 bg-indigo-500 text-white text-sm font-semibold rounded-md shadow-lg shadow-indigo-500/50 focus:outline-none"
-    {...props}
-  >
-    {children}
-  </button>
-)
+const KEY_MAP: Record<string, Direction> = {
+  ArrowLeft: Direction.LEFT,
+  ArrowRight: Direction.RIGHT,
+  ArrowUp: Direction.UP,
+  ArrowDown: Direction.DOWN,
+}
 
-const Game = () => {
-  const dynamicMachine = useMemo(
-    () => gameMachine.withContext(createInitialGameContext()),
-    [],
-  )
-
-  const [state, send] = useMachine(dynamicMachine)
-
-  const matrix = useMemo(() => state.context.stage.outputMatrix(), [state])
-
+const useKeydownHandler = (keydownHandler: (e: KeyboardEvent) => void) => {
   useEffect(() => {
-    const keydownHandler = (e: KeyboardEvent) => {
-      switch (e.key) {
-        case 'ArrowLeft':
-          send({ type: 'MOVE', payload: Direction.LEFT })
-          break
-        case 'ArrowRight':
-          send({ type: 'MOVE', payload: Direction.RIGHT })
-          break
-        case 'ArrowUp':
-          send({ type: 'MOVE', payload: Direction.UP })
-          break
-        case 'ArrowDown':
-          send({ type: 'MOVE', payload: Direction.DOWN })
-          break
-      }
-    }
-
     window.addEventListener('keydown', keydownHandler)
-
     return () => {
       window.removeEventListener('keydown', keydownHandler)
     }
-  }, [])
+  }, [keydownHandler])
+}
+
+const useKeydownEvents = (send: (event: MoveEvent) => void) => {
+  const keydownHandler = useCallback(
+    (e: KeyboardEvent) => {
+      const payload = KEY_MAP[e.key]
+      if (payload == null) return
+      send({ type: 'MOVE', payload })
+    },
+    [send],
+  )
+
+  useKeydownHandler(keydownHandler)
+}
+
+const Container: FC = ({ children }) => (
+  <div
+    className={cn(
+      'h-screen',
+      'flex',
+      'justify-center',
+      'items-center',
+      'bg-gray-600',
+    )}
+  >
+    {children}
+  </div>
+)
+
+const Stage: FC<{ isBlurred: boolean }> = ({ children, isBlurred }) => (
+  <div
+    className={cn(
+      'flex',
+      'flex-col',
+      'justify-center',
+      'items-center',
+      'gap-4',
+      { 'blur-sm': isBlurred },
+    )}
+  >
+    {children}
+  </div>
+)
+
+const Name: FC = ({ children }) => (
+  <div
+    className={cn(
+      'font-mono',
+      'text-lg',
+      'tracking-widest',
+      'lowercase',
+      'text-amber-500',
+      styles.name,
+    )}
+  >
+    {children}
+  </div>
+)
+
+const Score: FC = ({ children }) => (
+  <div
+    className={cn(
+      'font-mono',
+      'text-sm',
+      'lowercase',
+      'text-gray-100',
+      styles.score,
+    )}
+  >
+    {children}
+  </div>
+)
+
+const Game: FC = () => {
+  const [state, send] = useMachine(gameMachine)
+
+  // const matrix = useMemo(() => state.context.stage.outputMatrix(), [state])
+  const matrix = state.context.stage.outputMatrix()
+
+  useKeydownEvents(send)
+
+  console.log(state)
 
   const [w, h] = getSize(matrix)
 
+  const handleDialogClose = useCallback(() => send({ type: 'RESET' }), [send])
+
   return (
-    <div className="h-screen flex flex-col place-content-center items-center gap-4">
-      {/* <StageGrid
-        className="shadow-xl"
-      >
-      </StageGrid>
-      */}
-      <StageGrid className="shadow-xl" width={w} height={h}>
-        <Snake matrix={matrix} />
-      </StageGrid>
-      <div>
-        {state.matches('idle') && (
-          <Button onClick={() => send({ type: 'START' })}>Play</Button>
-        )}
-        {state.matches('playing') && (
-          <Button onClick={() => send({ type: 'PAUSE' })}>Pause</Button>
-        )}
-        {state.matches('paused') && (
-          <Button onClick={() => send({ type: 'RESUME' })}>Resume</Button>
-        )}
-        {state.matches('over') && (
-          <Button onClick={() => send({ type: 'PLAY_AGAIN' })}>
-            Play again
-          </Button>
-        )}
-      </div>
-    </div>
+    <>
+      <Container>
+        <Stage isBlurred={state.matches('over')}>
+          <div className={cn(styles.stageWrapper)}>
+            <Name>Snake</Name>
+            <Score>Score: {state.context.computed.score}</Score>
+            <Board>
+              <BoardGrid className="shadow-xl" width={w} height={h}>
+                <Snake matrix={matrix} />
+              </BoardGrid>
+            </Board>
+          </div>
+
+          <div>
+            {state.matches('idle') && (
+              <Button onClick={() => send({ type: 'START' })}>Play</Button>
+            )}
+            {state.matches('playing') && (
+              <Button onClick={() => send({ type: 'PAUSE' })}>Pause</Button>
+            )}
+            {state.matches('paused') && (
+              <Button onClick={() => send({ type: 'RESUME' })}>Resume</Button>
+            )}
+            {state.matches('over') && <Button>Play</Button>}
+          </div>
+        </Stage>
+      </Container>
+
+      <GameOverDialog
+        isOpen={state.matches('over')}
+        onChangeOpen={handleDialogClose}
+      />
+    </>
   )
 }
 

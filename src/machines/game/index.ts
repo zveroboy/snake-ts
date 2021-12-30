@@ -12,24 +12,45 @@ import {
 import { Snake } from './Snake'
 import { Stage } from './Stage'
 
+// class ContreteGameContext implements GameContext {
+//   stage!: Stage
+//   direction!: Direction
+//   interval!: number
+//   constructor(context: GameContext) {
+//     Object.assign(this, context)
+//   }
+//   get score(): number {
+//     return this.stage.snake.size
+//   }
+// }
+
+const createContext = (
+  baseContext: Omit<GameContext, 'computed'>,
+): GameContext => {
+  return Object.assign(baseContext, {
+    computed: {
+      get score() {
+        return baseContext.stage.snake.size
+      },
+    },
+  })
+}
+
 const eat = (context: GameContext, direction: Direction): GameContext => {
   const newStage = context.stage.snakeEats(direction)
-  return {
-    ...context,
+  return createContext({
     stage: newStage,
     direction,
-    interval: 1000 - 50 * newStage.snake.size,
-  }
+    interval: 1000 - Math.sqrt(newStage.snake.size) * 100,
+  })
 }
 
 const move = (context: GameContext, direction: Direction): GameContext => {
-  const { stage } = context
-
-  return {
+  return createContext({
     ...context,
-    stage: stage.snakeMoves(direction),
+    stage: context.stage.snakeMoves(direction),
     direction,
-  }
+  })
 }
 
 const validateNewCoords = (
@@ -50,11 +71,11 @@ export const createInitialGameContext = (): GameContext => {
   const board = new Board(BOARD_SIZE.W, BOARD_SIZE.H)
   const snake = new Snake([[0, 0]])
   const stage = new Stage(board, snake)
-  return {
+  return createContext({
     stage,
     direction: Direction.RIGHT,
     interval: 1000,
-  }
+  })
 }
 
 export const gameMachine = createMachine<GameContext, GameEvent>({
@@ -115,72 +136,68 @@ export const gameMachine = createMachine<GameContext, GameEvent>({
       },
     },
     over: {
-      entry: () => {
-        console.log('GAME_OVER')
-      },
       on: {
-        PLAY_AGAIN: {
-          target: 'playing',
-          actions: 'playAgain',
-        },
+        RESET: { target: 'idle', actions: ['playAgain'] },
       },
     },
-  },
-}).withConfig({
-  services: {
-    ticker: (context) => (callback, onReceive: Receiver<GameCallbackEvent>) => {
-      let interval: number | undefined
-      const createInterval = (time: number) => {
-        interval = setInterval(() => {
-          callback({ type: 'AUTO_MOVE' })
-        }, time)
-      }
-
-      createInterval(context.interval)
-
-      onReceive((ev) => {
-        console.log('onReceive', context.interval, ev)
-        if (ev.type === 'RESET_TIMER') {
-          clearInterval(interval)
-          createInterval(ev.payload)
-        }
-      })
-
-      return () => {
-        clearInterval(interval)
-      }
-    },
-  },
-  guards: {
-    isOpposite: ({ direction }, event) => {
-      if (!checkIsMoveEvent(event)) return true
-      const res = compare(
-        [0, 0],
-        add(DIRECTIONS[direction], DIRECTIONS[event.payload]),
-      )
-      return res
-    },
-    isMoveInvalid: (context, event) => {
-      return !validateNewCoords(context, getDireaction(context, event))
-    },
-    isFoodReached: (context, event) => {
-      const { stage } = context
-      const direction = getDireaction(context, event)
-      const newCoords = stage.snake.calcNextMoveCoords(direction)
-      return compare(stage.food, newCoords)
-    },
-  },
-  actions: {
-    playAgain: assign(createInitialGameContext),
-    eat: assign((context, event): GameContext => {
-      return eat(context, getDireaction(context, event))
-    }),
-    move: assign((context, event): GameContext => {
-      return move(context, getDireaction(context, event))
-    }),
-    sendResetTimer: send(
-      (context) => ({ type: 'RESET_TIMER', payload: context.interval }),
-      { to: 'ticker' },
-    ),
   },
 })
+  .withConfig({
+    services: {
+      ticker:
+        (context) => (callback, onReceive: Receiver<GameCallbackEvent>) => {
+          let interval: number | undefined
+          const createInterval = (time: number) => {
+            interval = setInterval(() => {
+              callback({ type: 'AUTO_MOVE' })
+            }, time)
+          }
+
+          createInterval(context.interval)
+
+          onReceive((ev) => {
+            if (ev.type === 'RESET_TIMER') {
+              clearInterval(interval)
+              createInterval(ev.payload)
+            }
+          })
+
+          return () => {
+            clearInterval(interval)
+          }
+        },
+    },
+    guards: {
+      isOpposite: ({ direction }, event) => {
+        if (!checkIsMoveEvent(event)) return true
+        const res = compare(
+          [0, 0],
+          add(DIRECTIONS[direction], DIRECTIONS[event.payload]),
+        )
+        return res
+      },
+      isMoveInvalid: (context, event) => {
+        return !validateNewCoords(context, getDireaction(context, event))
+      },
+      isFoodReached: (context, event) => {
+        const { stage } = context
+        const direction = getDireaction(context, event)
+        const newCoords = stage.snake.calcNextMoveCoords(direction)
+        return compare(stage.food, newCoords)
+      },
+    },
+    actions: {
+      playAgain: assign(createInitialGameContext),
+      eat: assign((context, event): GameContext => {
+        return eat(context, getDireaction(context, event))
+      }),
+      move: assign((context, event): GameContext => {
+        return move(context, getDireaction(context, event))
+      }),
+      sendResetTimer: send(
+        (context) => ({ type: 'RESET_TIMER', payload: context.interval }),
+        { to: 'ticker' },
+      ),
+    },
+  })
+  .withContext(createInitialGameContext())

@@ -28,15 +28,15 @@ const BaseCell: FC<ClassName> = ({ className }) => (
 )
 
 const Cells: Record<FieldType, ComponentType> = {
-  [FieldType.EMPTY]: () => <BaseCell className="relative bg-gray-200 z-0" />,
+  [FieldType.EMPTY]: () => <BaseCell className="relative bg-gray-500 z-0" />,
   [FieldType.SNAKE]: () => (
     <div>
-      <BaseCell className="absolute z-10 shadow-lg shadow-green-900" />
+      <BaseCell className="absolute z-10 shadow-md shadow-green-700" />
       <BaseCell className="relative z-20 bg-green-500" />
     </div>
   ),
   [FieldType.FOOD]: () => (
-    <BaseCell className="relative bg-red-500 shadow-lg shadow-red-900 z-10" />
+    <BaseCell className="relative bg-red-500 shadow-md shadow-red-700 z-10" />
   ),
 }
 

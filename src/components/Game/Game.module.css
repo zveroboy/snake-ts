@@ -1,0 +1,27 @@
+.container {
+  position: relative;
+}
+
+.stageWrapper {
+  position: relative;
+}
+
+.solid {
+  position: relative;
+  z-index: 10;
+}
+
+.name {
+  inline-size: fit-content;
+  writing-mode: vertical-rl;
+  position: absolute;
+  left: -1.625rem;
+  transform: scale(-1);
+  top: 0;
+}
+
+.score {
+  position: absolute;
+  top: -1.25rem;
+  right: 0;
+}

@@ -1,25 +1,15 @@
-import { FC, ComponentType, memo } from 'react'
-import identity from 'lodash/identity'
-import { useMatrix } from '../../hooks/useMatrix'
+import { FC } from 'react'
+import cn from 'classnames'
+import styles from './Board.module.css'
 
-interface Props {
-  Cell: ComponentType
-  width: number
-  height: number
-}
+interface Props {}
 
-const Board: FC<Props> = ({ Cell, width, height }) => {
-  const matrix = useMatrix(width, height)
+const Board: FC<Props> = ({ children }) => (
+  <div className={cn(styles.corner, styles.glow)}>
+    <div className={cn('bg-gray-600', styles.solid)}>
+      <div className={cn('p-2', 'stripes', styles.corner)}>{children}</div>
+    </div>
+  </div>
+)
 
-  return (
-    <>
-      {matrix
-        .flatMap((rows) => rows.map(identity))
-        .map((_, i) => (
-          <Cell key={i} />
-        ))}
-    </>
-  )
-}
-
-export default memo(Board)
+export default Board

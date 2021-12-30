@@ -1,0 +1,31 @@
+
+.corner::before,
+.corner::after {
+  --bg-rotation: 0deg;
+  --size: 50%;
+  --thickness: 1px;
+  --shift: 0;
+  content: '';
+  position: absolute;
+  top: var(--shift);
+  left: var(--shift);
+  background: linear-gradient(var(--bg-rotation), orange, transparent 100%);
+}
+.corner::before {
+  --bg-rotation: 180deg;
+  height: var(--size);
+  width: var(--thickness);
+}
+.corner:after {
+  --bg-rotation: 90deg;
+  width: var(--size);
+  height: var(--thickness);
+}
+
+.corner.glow::before,
+.corner.glow::after {
+  --size: 50%;
+  --thickness: 4px;
+  --shift: calc(var(--thickness) / -2);
+  filter: blur(0.5rem);
+}

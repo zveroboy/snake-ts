@@ -17,9 +17,6 @@ export class Stage {
       tempBoard.matrix[y][x] = FieldType.SNAKE
     }
 
-    // const coords = [...tempBoard.traverse(([y,x], matrix)=> {
-    //   return [[y,x] as Coords, matrix[y][x]]
-    // })].filter(())
     const coords = tempBoard.matrix.flatMap((row, y) =>
       row.reduce<Coords[]>((acc, val, x) => {
         if (val === FieldType.EMPTY) acc.push([y, x])
@@ -29,7 +26,7 @@ export class Stage {
 
     const result = sample(coords)
 
-    if (!result) throw new Error('Failed on random element retrieving')
+    if (!result) throw new Error('Failed to retrieve a random element')
 
     return result
   }
@@ -45,9 +42,8 @@ export class Stage {
   outputMatrix(): Matrix<FieldType> {
     const { matrix } = this.board.clone()
 
-    // console.log('this.snake', [...this.snake])
-    for (const coords of this.snake) {
-      matrix[coords[0]][coords[1]] = FieldType.SNAKE
+    for (const [y, x] of this.snake) {
+      matrix[y][x] = FieldType.SNAKE
     }
 
     {

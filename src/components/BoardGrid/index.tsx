@@ -1,6 +1,6 @@
-import { FC, memo, useMemo, CSSProperties } from 'react'
+import { FC, memo, CSSProperties, PropsWithChildren } from 'react'
 import cn from 'classnames'
-import styles from './Stage.module.css'
+import styles from './BoardGrid.module.css'
 
 interface Props {
   className?: string
@@ -8,7 +8,7 @@ interface Props {
   height: number
 }
 
-const StageGrid: FC<Props> = ({ children, className, width, height }) => {
+const BoardGrid: FC<Props> = ({ children, className, width, height }) => {
   return (
     <div
       className={cn(
@@ -30,4 +30,4 @@ const StageGrid: FC<Props> = ({ children, className, width, height }) => {
   )
 }
 
-export default memo(StageGrid)
+export default memo<PropsWithChildren<Props>>(BoardGrid)

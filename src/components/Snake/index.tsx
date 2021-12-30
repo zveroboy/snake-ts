@@ -1,5 +1,4 @@
 import { FC } from 'react'
-import identity from 'lodash/identity'
 import { Matrix } from '../../utils/matrix'
 import { FieldType } from '../../types/game'
 import Cells from '../Cells'
@@ -11,12 +10,10 @@ interface Props {
 const Snake: FC<Props> = ({ matrix }) => {
   return (
     <>
-      {matrix
-        .flatMap((rows) => rows.map<FieldType>(identity))
-        .map((val, i) => {
-          const Cell = Cells[val]
-          return <Cell key={i} />
-        })}
+      {matrix.flat().map((val, i) => {
+        const Cell = Cells[val]
+        return <Cell key={i} />
+      })}
     </>
   )
 }

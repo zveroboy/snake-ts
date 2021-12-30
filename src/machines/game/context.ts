@@ -9,7 +9,7 @@ export type GameEvent =
   | { type: 'START' }
   | { type: 'PAUSE' }
   | { type: 'RESUME' }
-  | { type: 'PLAY_AGAIN' }
+  | { type: 'RESET' }
   | MoveEvent
   | AutoMoveEvent
 
@@ -22,6 +22,9 @@ export interface GameContext {
   stage: Stage
   direction: Direction
   interval: number
+  computed: {
+    score: number
+  }
 }
 
 export const checkIsMoveEvent = (event: GameEvent): event is MoveEvent =>
