@@ -107,8 +107,6 @@ const Game: FC = () => {
 
   useKeydownEvents(send)
 
-  console.log(state)
-
   const [w, h] = getSize(matrix)
 
   const handleDialogClose = useCallback(() => send({ type: 'RESET' }), [send])
